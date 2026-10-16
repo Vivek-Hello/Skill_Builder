@@ -8,6 +8,7 @@ The app is a standard Next.js project and deploys to [Vercel](https://vercel.com
 2. In Vercel, choose **Add New → Project** and import the repo. Vercel detects Next.js.
 3. Under **Environment Variables**, add at least `GEMINI_API_KEY`, plus `GITHUB_TOKEN` and `ANTHROPIC_API_KEY` if you have them. See [configuration](configuration.md). Use different keys from your local ones.
 4. Click **Deploy**. Every push to `main` redeploys.
+5. If you use the skills hub, add your production URL in Supabase under **Authentication → URL Configuration** (Site URL, plus `https://your-domain/auth/callback` as a redirect URL), and update the GitHub OAuth app's homepage URL. See [hub-setup.md](hub-setup.md).
 
 Builds and test runs can take a minute or more. Routes declare their own time limits (`maxDuration`, up to 300 s), which fit within Vercel's limits.
 

@@ -1,6 +1,6 @@
 # Architecture
 
-SkillForge is a single Next.js app. The browser talks to route handlers under `src/app/api/`, which call three outside services: **Gemini** (thinking and writing), **GitHub** (finding existing skills), and optionally **Claude** (running skills for real). Nothing is stored in a database yet; see [Roadmap](roadmap.md).
+SkillForge is a single Next.js app. The browser talks to route handlers under `src/app/api/`, which call three outside services: **Gemini** (thinking and writing), **GitHub** (finding existing skills), and optionally **Claude** (running skills for real). Builds are kept in the visitor's browser. Published skills live in **Supabase** (Postgres plus auth), which is optional; see [Skills hub](#skills-hub).
 
 ```mermaid
 flowchart LR
@@ -89,6 +89,24 @@ Grading is always done by Gemini: it scores each answer 0–100 against the test
 - **Limits:** session length, sessions per 24 hours, a hidden message cap per session, and a reply length cap. See [configuration](configuration.md).
 - **History is append-only on the server.** The browser sends only the new message. Claude's full response content (including thinking and tool blocks) is appended unchanged, which keeps replayed thinking blocks valid and stops tampering.
 - **Cleanup:** expired sessions are swept lazily on every playground request, deleting their uploaded skill. Closing the tab sends a beacon to `/api/playground/end`.
+
+## Skills hub
+
+A GitHub-style home for skills, on Supabase. Setup: [hub-setup.md](hub-setup.md). Schema: [`0001_skills_hub.sql`](../supabase/migrations/0001_skills_hub.sql).
+
+| Table | Holds |
+|---|---|
+| `profiles` | One per account: username (unique, from GitHub or the email), display name, avatar. Created by a trigger on sign-up |
+| `skills` | Owner, slug (unique per owner), description, license, origin (`generated`, `adapted`, `cloned`, `forked`), GitHub source, `forked_from`, latest version, star and fork counts, a full-text search column |
+| `skill_versions` | Immutable snapshots: version number, files as JSON, message, and the change list when adapted |
+| `stars` | One row per user and skill |
+
+- **Publishing** goes through the `publish_skill` database function, which creates the skill on first publish and atomically takes the next version number. It runs as the caller, so row-level security applies.
+- **Security:** everything is publicly readable; only owners write their own rows; star and fork counts are only changed by triggers, and column privileges stop users writing them directly.
+- **Reads** (Explore, profiles, skill pages) use a cookie-less Supabase client, so page shells prerender and data streams in behind `<Suspense>`.
+- **Writes** (publish, star, fork) go through route handlers that act as the signed-in user, via Supabase's auth cookies. [`proxy.ts`](../src/proxy.ts) refreshes the session on page and hub requests.
+- **Forks** link back through `forked_from` and keep the original license files. "Fork and adapt" reuses the same adapt step as the builder.
+- **Usernames** that clash with app routes (`explore`, `skills`, `login`, …) are reserved.
 
 ## Front end
 

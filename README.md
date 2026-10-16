@@ -2,7 +2,7 @@
 
 **Agent Skills for Claude, built from a sentence.**
 
-Describe what you want Claude to be able to do. SkillForge searches GitHub and the web for an [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that already does it. A near-exact match with an open license is reused as-is, a close one is **adapted** to your request (with every change listed), and if nothing fits it writes a new one to the official format. You can then chat with Claude using the skill, run graded tests, and download a ready-to-install `.zip`.
+Describe what you want Claude to be able to do. SkillForge searches GitHub and the web for an [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that already does it. A near-exact match with an open license is reused as-is, a close one is **adapted** to your request (with every change listed), and if nothing fits it writes a new one to the official format. You can then chat with Claude using the skill, run graded tests, download a ready-to-install `.zip`, and publish it to the **skills hub**: a GitHub-style home for skills with profiles, stars, forks and versions.
 
 > SkillForge is a working name, set in [`src/lib/brand.ts`](src/lib/brand.ts). Not affiliated with Anthropic.
 
@@ -18,6 +18,7 @@ Describe what you want Claude to be able to do. SkillForge searches GitHub and t
 | **Try it (free playground)** | A time-boxed chat with the skill loaded, limited per visitor (10 minutes, 3 sessions a day by default). |
 | **Graded tests** | Writes 3 realistic test prompts with pass criteria, runs them with the skill loaded, and grades each answer. |
 | **My skills** | Every build is saved in the browser and gets its own link at `/skills/<id>`. |
+| **Skills hub** | Sign in with GitHub or email, publish skills to public pages at `/<username>/<skill>`, browse and search them on Explore, star them, fork them (as-is or adapted) and publish new versions. Optional; runs on Supabase. |
 | **Simulated mode** | With no Claude API key, "Try it" and tests run on Gemini playing Claude, clearly labelled in the UI. |
 
 ## Quick start
@@ -39,6 +40,7 @@ Open http://localhost:4321.
 | `GEMINI_API_KEY` | Everything | The app can't build skills |
 | `GITHUB_TOKEN` | Searching GitHub for existing skills | Only Gemini's web search is used, which finds far less |
 | `ANTHROPIC_API_KEY` | Running "Try it" and tests on real Claude | Both run in simulated mode with Gemini |
+| `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | The skills hub | The hub is off; everything else works. Setup: [docs/hub-setup.md](docs/hub-setup.md) |
 
 All settings are described in [docs/configuration.md](docs/configuration.md).
 
@@ -63,12 +65,15 @@ src/
     page.tsx                 Landing page and builder
     skills/page.tsx          My skills
     skills/[id]/page.tsx     Workspace for one saved skill
-    api/                     build, clone, adapt, test, playground
+    explore/, login/         Hub: browse and search, sign in
+    [username]/[skill]/      Hub: profile and public skill pages
+    api/                     build, clone, adapt, test, playground, hub
   features/                  UI, grouped by feature
     studio/                  Landing → building → workspace flow
     workspace/               Workspace, file browser, matches list
     playground/              "Try it" chat
     testing/                 Graded test panel
+    hub/                     Publish, star, fork, cards, sign-in, account menu
   components/                Shared UI: site header and footer, markdown
   server/                    Server-only code (never sent to the browser)
     pipeline.ts              Analyze → search → match → clone, adapt or generate → validate
@@ -77,11 +82,16 @@ src/
     github.ts                GitHub search, candidate loading, folder download
     playground-sessions.ts   Free sessions, limits, chat turns
     request.ts, visitor.ts   Input validation, visitor identity
+    hub.ts, hub-auth.ts      Hub reads and writes, signed-in user
+    supabase.ts              Supabase clients (as the user, or public)
   lib/                       Shared by browser and server
     types.ts                 Shared types
     skill-spec.ts, validate.ts   The Agent Skill rules and checker
     history.ts               "My skills" in browser storage
-    brand.ts, ndjson.ts
+    supabase/                Supabase config and browser client
+    brand.ts, ndjson.ts, zip.ts
+  proxy.ts                   Refreshes the sign-in session
+supabase/migrations/         Database schema for the hub
 ```
 
 ## Documentation
@@ -89,5 +99,6 @@ src/
 - [Architecture](docs/architecture.md): how a build flows and how each module fits
 - [API](docs/api.md): every route, its request and its streamed events
 - [Configuration](docs/configuration.md): environment variables and built-in limits
+- [Skills hub setup](docs/hub-setup.md): Supabase project, sign-in providers, first publish
 - [Deployment](docs/deployment.md): deploying to Vercel, and what to change first
 - [Roadmap and known limitations](docs/roadmap.md)

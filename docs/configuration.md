@@ -10,6 +10,9 @@ Settings come from environment variables. Locally, put them in `.env.local` (git
 | `GITHUB_TOKEN` | Recommended | GitHub code search for existing `SKILL.md` files; also raises GitHub's rate limit from 60 to 5,000 requests an hour. Use a fine-grained token with **Public repositories (read-only)** and no extra permissions. |
 | `ANTHROPIC_API_KEY` | Optional | Running "Try it" and tests on real Claude. Without it, both run in simulated mode with Gemini. Get one at https://console.anthropic.com/settings/keys (the API needs prepaid credit) |
 
+| `NEXT_PUBLIC_SUPABASE_URL` | Optional | The skills hub. Your Supabase project URL. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional | The skills hub. The project's publishable (or legacy anon) key. Safe in the browser because every table uses row-level security. See [hub-setup.md](hub-setup.md). |
+
 Never commit keys, paste them in chats or put them in `.env.example`. If a key leaks, delete it in the provider's console and create a new one.
 
 ## Models

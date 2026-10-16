@@ -130,6 +130,51 @@ Cases run in parallel, so `case` events can arrive in any order; match them by `
 
 ---
 
+## Skills hub
+
+These need the hub configured (otherwise `503`) and a signed-in user (otherwise `401`). The session comes from Supabase's auth cookies. Public hub data is read directly by the pages, not through these routes.
+
+### `POST /api/hub/publish`
+
+Publish a skill as the signed-in user. The first publish creates `/<username>/<name>`; publishing the same name again adds the next version.
+
+**Request**
+
+```json
+{ "files": [/* SkillFile[] */], "message": "Added MySQL support", "license": "MIT", "origin": "generated", "source": null, "changes": null }
+```
+
+| Field | Notes |
+|---|---|
+| `files` | Must pass validation with no errors. The name and description come from `SKILL.md` |
+| `message` | Version note, up to 500 characters |
+| `license` | `MIT`, `Apache-2.0`, `CC-BY-4.0` or `CC0-1.0`. Ignored for cloned or adapted skills, which keep their source's license |
+| `origin`, `source`, `changes` | From the `BuildResult` |
+
+**Response** (`PublishedRef`): `{ "skillId": "uuid", "username": "vivek", "slug": "sql-migration-reviewer", "version": 2 }`
+
+**Errors:** `400` invalid files; `422` validation errors; `500` database error.
+
+### `POST /api/hub/star`
+
+**Request:** `{ "skillId": "uuid", "starred": true }` → `{ "starred": true, "stars": 12 }`
+
+### `POST /api/hub/fork`
+
+Copy a skill's latest version to the signed-in user's account, optionally adapted. Takes about a minute when adapting.
+
+**Request:** `{ "skillId": "uuid", "mode": "copy" | "adapt", "description": "…" }` (description required for `adapt`, 10–4000 characters)
+
+**Response:** `PublishedRef` for the new skill. If the user already has a skill with that name, the fork is named `<name>-fork` (then `-fork-2`, …) and its `SKILL.md` name is updated to match. License files are always kept.
+
+**Errors:** `400` invalid request; `404` skill or version not found; `500` failure.
+
+### `GET /auth/callback`
+
+Where Supabase redirects after GitHub or email sign-in. Exchanges the `code` for a session and redirects to `next` (same-site paths only), or to `/login?error=1`.
+
+---
+
 ## Playground
 
 A visitor is identified by the `sb_vid` cookie plus their IP; routes set the cookie if it's missing.

@@ -4,7 +4,7 @@
 
 | Area | Limitation | Impact |
 |---|---|---|
-| Accounts | No login. "My skills" lives in each visitor's browser (`localStorage`). | Skills don't follow users across devices and are lost if browser data is cleared. |
+| Drafts | Builds ("My skills") live in each visitor's browser until published. | Unpublished builds don't follow users across devices and are lost if browser data is cleared. |
 | Free limits | Kept in server memory, keyed by cookie and IP. | Reset on restart; not shared across server instances; easy to get around with a VPN or incognito. Fine for testing, not for a public launch. |
 | Cost control | `/api/build` and `/api/test` have no per-visitor rate limit. | A heavy user can use up the Gemini quota. |
 | Simulated mode | Without a Claude key, Gemini plays Claude. | It can't run a skill's scripts, and real Claude may behave differently. Results are labelled "Simulated". |
@@ -22,9 +22,12 @@
 - [ ] Deploy to Vercel with production keys and spending limits
 
 **Accounts and saved work**
-- [ ] Sign-in (GitHub and Google)
-- [ ] Save skills to a database (Postgres) instead of the browser
-- [ ] Shareable public links for a skill
+- [x] Sign-in (GitHub and email)
+- [x] Skills hub: publish, public pages, Explore and search, stars, forks, versions
+- [ ] Sync unpublished drafts to the account
+- [ ] Delete and rename skills from the hub UI
+- [ ] Diff between versions
+- [ ] Report abuse and moderation tools
 
 **Better skills**
 - [ ] Refine with chat: describe a change and have the skill edited in place
