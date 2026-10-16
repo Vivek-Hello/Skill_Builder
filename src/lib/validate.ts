@@ -5,8 +5,8 @@ import {
   NAME_MAX,
   NAME_PATTERN,
   RESERVED_WORDS,
-} from "./skill-spec";
-import type { SkillFile, ValidationIssue } from "./types";
+} from "@/lib/skill-spec";
+import type { SkillFile, ValidationIssue } from "@/lib/types";
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
@@ -83,4 +83,14 @@ export function validateSkill(files: SkillFile[]): ValidationIssue[] {
   }
 
   return issues;
+}
+
+// The model sometimes nests everything under the skill's own folder
+// ("my-skill/SKILL.md"); SKILL.md must sit at the root of the file set.
+export function stripWrapperFolder(files: SkillFile[]): SkillFile[] {
+  if (files.some((f) => f.path === "SKILL.md")) return files;
+  const top = files[0]?.path.split("/")[0];
+  if (!top || !files.every((f) => f.path.startsWith(`${top}/`))) return files;
+  if (!files.some((f) => f.path === `${top}/SKILL.md`)) return files;
+  return files.map((f) => ({ ...f, path: f.path.slice(top.length + 1) }));
 }

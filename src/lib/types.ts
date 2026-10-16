@@ -33,13 +33,18 @@ export type ValidationIssue = {
 };
 
 export type BuildResult = {
-  origin: "cloned" | "generated";
+  origin: "cloned" | "adapted" | "generated";
   skillName: string;
   files: SkillFile[];
   issues: ValidationIssue[];
-  match?: Candidate & { score: number; reason: string };
-  // Close matches we found but didn't clone (low score or restrictive license)
-  related: (Candidate & { note: string })[];
+  // Where a cloned or adapted skill came from
+  source?: { repo: string; url: string; license: string | null; stars: number };
+  // Every existing skill we found that's at least loosely relevant, best first
+  // What was changed when an existing skill was adapted to fit the request
+  adaptation?: { changes: string[] };
+  matches: ScoredCandidate[];
+  // Requests that should trigger the skill, offered as starters in the playground
+  examples?: string[];
 };
 
 export type BuildEvent =
@@ -47,4 +52,52 @@ export type BuildEvent =
   | { type: "result"; result: BuildResult }
   | { type: "error"; message: string };
 
-export type StepId = "analyze" | "search" | "match" | "clone" | "generate" | "validate";
+export type StepId = "analyze" | "search" | "match" | "clone" | "adapt" | "generate" | "validate";
+
+export type ScoredCandidate = Candidate & {
+  score: number;
+  reason: string;
+  cloneable: boolean; // permissive license, so the user may take a copy
+};
+
+export type TestCase = {
+  prompt: string;
+  criteria: string[];
+};
+
+export type TestVerdict = {
+  score: number; // 0-100
+  passed: boolean;
+  feedback: string;
+};
+
+export type TestEvent =
+  | { type: "status"; message: string }
+  | { type: "case"; index: number; status: "running" }
+  | {
+      type: "case";
+      index: number;
+      status: "done";
+      output: string;
+      skillLoaded: boolean;
+      toolCalls: number;
+      simulated: boolean;
+      verdict: TestVerdict;
+    }
+  | { type: "case"; index: number; status: "error"; message: string }
+  | { type: "done"; passed: number; total: number }
+  | { type: "error"; message: string };
+
+export type PlaygroundEvent =
+  | { type: "text"; text: string }
+  | { type: "tool" } // Claude started running code in its container
+  | { type: "skill_used" }
+  | { type: "done"; messagesLeft: number }
+  | { type: "error"; message: string };
+
+export type PlaygroundSession = {
+  sessionId: string;
+  expiresAt: number;
+  sessionsLeft: number;
+  simulated: boolean; // Gemini standing in for Claude (no Anthropic key)
+};

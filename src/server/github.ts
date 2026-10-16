@@ -1,7 +1,7 @@
 import "server-only";
 import { Octokit } from "@octokit/rest";
-import { parseSkillMd } from "./validate";
-import type { Candidate, SkillFile } from "./types";
+import { parseSkillMd } from "@/lib/validate";
+import type { Candidate, SkillFile } from "@/lib/types";
 
 // Code search needs a token; everything else works anonymously at a low rate limit.
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN || undefined });
@@ -137,5 +137,22 @@ export async function fetchSkillFolder(c: Candidate): Promise<SkillFile[]> {
       return { path: t.path!.slice(dir.length), content };
     }),
   );
-  return files.filter((f): f is SkillFile => f !== null);
+  const out = files.filter((f): f is SkillFile => f !== null);
+
+  // Permissive licenses require keeping the notice with copies. Skill folders
+  // usually rely on the repo-root LICENSE, so bring it along when it's missing.
+  if (!out.some((f) => /^(license|licence|copying)(\.|$)/i.test(f.path))) {
+    try {
+      const { data } = await octokit.licenses.getForRepo({ owner, repo });
+      out.push({ path: "LICENSE", content: decode(data.content) });
+    } catch {
+      // no license file at the root; isPermissive() already gated on the SPDX id
+    }
+  }
+  return out;
+}
+
+// Look up one specific SKILL.md, e.g. when the user picks a match to clone
+export function getCandidate(repo: string, path: string) {
+  return loadCandidate(repo, path, "github");
 }
