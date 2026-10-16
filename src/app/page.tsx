@@ -1,9 +1,5 @@
-import { SkillBuilder } from "@/components/skill-builder";
+import { Studio } from "@/features/studio/studio";
 
 export default function Home() {
-  return (
-    <main className="flex-1">
-      <SkillBuilder />
-    </main>
-  );
+  return <Studio />;
 }
