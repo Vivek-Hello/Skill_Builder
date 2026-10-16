@@ -8,7 +8,7 @@ import {
   searchWebForSkills,
 } from "@/server/ai/gemini";
 import { candidatesFromUrl, fetchSkillFolder, hasGithubToken, isPermissive, searchGithub } from "@/server/github";
-import { parseSkillMd, stripWrapperFolder, validateSkill } from "@/lib/validate";
+import { keepLicenseFiles, parseSkillMd, stripWrapperFolder, validateSkill } from "@/lib/validate";
 import type { BuildEvent, BuildResult, Candidate, ScoredCandidate, SkillFile } from "@/lib/types";
 
 // Match score needed to hand over an existing skill as-is, or to adapt it instead of
@@ -157,12 +157,6 @@ export async function adaptExisting(
   };
 }
 
-// The model must not drop or edit the original license or notice files
-function keepLicenseFiles(files: SkillFile[], original: SkillFile[]) {
-  const isLegal = (p: string) => /^(license|licence|copying|notice)(\.|$)/i.test(p.split("/").pop() ?? "");
-  const legal = original.filter((f) => isLegal(f.path));
-  return [...files.filter((f) => !isLegal(f.path)), ...legal];
-}
 
 // Cloned skills are handed over as-is; validation only reports problems
 export async function cloneSkill(candidate: Candidate): Promise<BuildResult> {

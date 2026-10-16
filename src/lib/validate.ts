@@ -94,3 +94,9 @@ export function stripWrapperFolder(files: SkillFile[]): SkillFile[] {
   if (!files.some((f) => f.path === `${top}/SKILL.md`)) return files;
   return files.map((f) => ({ ...f, path: f.path.slice(top.length + 1) }));
 }
+
+// Adapted or forked skills must keep the original license and notice files untouched
+export function keepLicenseFiles(files: SkillFile[], original: SkillFile[]): SkillFile[] {
+  const isLegal = (p: string) => /^(license|licence|copying|notice)(.|$)/i.test(p.split("/").pop() ?? "");
+  return [...files.filter((f) => !isLegal(f.path)), ...original.filter((f) => isLegal(f.path))];
+}
