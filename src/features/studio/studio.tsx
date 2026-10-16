@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { getSkill, newSkillId, saveSkill } from "@/lib/history";
 import { postJson, streamNdjson } from "@/lib/ndjson";
 import { stripWrapperFolder, validateSkill } from "@/lib/validate";
+import type { PublishedRef } from "@/lib/hub-types";
 import type { BuildEvent, BuildResult, ScoredCandidate, StepId } from "@/lib/types";
 import { BuildProgress, initialSteps } from "@/features/studio/build-progress";
 import { Landing } from "@/features/studio/landing";
@@ -22,7 +23,7 @@ export function Studio({ initialId }: { initialId?: string }) {
   const [steps, setSteps] = useState(initialSteps);
   const [result, setResult] = useState<BuildResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [entry, setEntry] = useState<{ id: string; createdAt: number } | null>(null);
+  const [entry, setEntry] = useState<{ id: string; createdAt: number; published?: PublishedRef } | null>(null);
   // Bumped on every new result so per-skill UI state (file tab, chat, tests) starts fresh
   const [resultKey, setResultKey] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -37,7 +38,7 @@ export function Studio({ initialId }: { initialId?: string }) {
       // Older builds could nest files one folder too deep; repair on open
       const files = stripWrapperFolder(saved.result.files);
       setResult({ ...saved.result, files, issues: validateSkill(files) });
-      setEntry({ id: saved.id, createdAt: saved.createdAt });
+      setEntry({ id: saved.id, createdAt: saved.createdAt, published: saved.published });
       setPhase("ready");
     });
   }, [initialId]);
@@ -47,6 +48,7 @@ export function Studio({ initialId }: { initialId?: string }) {
   function show(next: BuildResult, keepEntry: boolean) {
     const id = keepEntry && entry ? entry.id : newSkillId();
     const createdAt = keepEntry && entry ? entry.createdAt : Date.now();
+    // A rebuilt or swapped skill is new content; it hasn't been published yet
     saveSkill({ id, createdAt, description, result: next });
     setEntry({ id, createdAt });
     setResult(next);
@@ -127,6 +129,13 @@ export function Studio({ initialId }: { initialId?: string }) {
         busy={false}
         onUseMatch={useMatch}
         onRegenerate={() => build(true)}
+        published={entry?.published}
+        returnTo={entry ? `/skills/${entry.id}` : "/"}
+        onPublished={(ref) => {
+          if (!entry || !result) return;
+          saveSkill({ id: entry.id, createdAt: entry.createdAt, description, result, published: ref });
+          setEntry({ ...entry, published: ref });
+        }}
       />
     );
   }

@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { Anvil, Library, Plus } from "lucide-react";
+import { Anvil, Compass, Library, Plus } from "lucide-react";
+import { UserMenu } from "@/features/hub/user-menu";
 import { BRAND } from "@/lib/brand";
 
 export function SiteHeader() {
@@ -14,6 +16,13 @@ export function SiteHeader() {
         </Link>
         <nav className="ml-auto flex items-center gap-1 text-sm">
           <Link
+            href="/explore"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-muted hover:bg-panel-2 hover:text-foreground"
+          >
+            <Compass className="size-4" aria-hidden />
+            <span className="hidden sm:inline">Explore</span>
+          </Link>
+          <Link
             href="/skills"
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-muted hover:bg-panel-2 hover:text-foreground"
           >
@@ -27,6 +36,10 @@ export function SiteHeader() {
             <Plus className="size-4" aria-hidden />
             New skill
           </Link>
+          {/* Reads the browser session and current path */}
+          <Suspense>
+            <UserMenu />
+          </Suspense>
         </nav>
       </div>
     </header>

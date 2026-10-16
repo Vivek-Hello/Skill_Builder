@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import JSZip from "jszip";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -18,6 +17,9 @@ import {
   WandSparkles,
 } from "lucide-react";
 import type { BuildResult, ScoredCandidate } from "@/lib/types";
+import { downloadSkillZip } from "@/lib/zip";
+import type { PublishedRef } from "@/lib/hub-types";
+import { PublishButton } from "@/features/hub/publish-button";
 import { FileBrowser } from "@/features/workspace/file-browser";
 import { MatchesList, type MatchMode } from "@/features/workspace/matches-list";
 import { Playground } from "@/features/playground/playground";
@@ -31,23 +33,18 @@ type Props = {
   busy: boolean;
   onUseMatch: (m: ScoredCandidate, mode: MatchMode) => Promise<void>;
   onRegenerate: () => void;
+  published?: PublishedRef;
+  // This skill's own page, to come back to after signing in
+  returnTo: string;
+  onPublished: (ref: PublishedRef) => void;
 };
 
-export function Workspace({ result, description, busy, onUseMatch, onRegenerate }: Props) {
+export function Workspace({ result, description, busy, onUseMatch, onRegenerate, published, returnTo, onPublished }: Props) {
   const [tab, setTab] = useState<Tab>("try");
   const errors = result.issues.filter((i) => i.level === "error");
   const warnings = result.issues.filter((i) => i.level === "warning");
 
-  async function download() {
-    const zip = new JSZip();
-    const folder = zip.folder(result.skillName)!;
-    for (const f of result.files) folder.file(f.path, f.content);
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement("a"), { href: url, download: `${result.skillName}.zip` });
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  const download = () => downloadSkillZip(result.skillName, result.files);
 
   const tabs: { id: Tab; label: string; icon: typeof Search; count?: number; alert?: boolean }[] = [
     { id: "try", label: "Try it", icon: MessageSquare },
@@ -90,7 +87,8 @@ export function Workspace({ result, description, busy, onUseMatch, onRegenerate 
           )}
         </div>
 
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <PublishButton result={result} published={published} returnTo={returnTo} onPublished={onPublished} />
           <button
             type="button"
             onClick={onRegenerate}

@@ -1,5 +1,6 @@
 "use client";
 
+import type { PublishedRef } from "@/lib/hub-types";
 import type { BuildResult } from "@/lib/types";
 
 // Skills a visitor built, kept in this browser only until we add accounts
@@ -8,6 +9,8 @@ export type SavedSkill = {
   createdAt: number;
   description: string;
   result: BuildResult;
+  // Set once the skill is published to the hub
+  published?: PublishedRef;
 };
 
 const KEY = "skillforge:skills";
