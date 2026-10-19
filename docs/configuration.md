@@ -9,7 +9,6 @@ Settings come from environment variables. Locally, put them in `.env.local` (git
 | `GEMINI_API_KEY` | **Yes** | Analyzing requests, web search, scoring matches, writing skills and test cases, grading, and simulated mode. Get one at https://aistudio.google.com/apikey |
 | `GITHUB_TOKEN` | Recommended | GitHub code search for existing `SKILL.md` files; also raises GitHub's rate limit from 60 to 5,000 requests an hour. Use a fine-grained token with **Public repositories (read-only)** and no extra permissions. |
 | `ANTHROPIC_API_KEY` | Optional | Running "Try it" and tests on real Claude. Without it, both run in simulated mode with Gemini. Get one at https://console.anthropic.com/settings/keys (the API needs prepaid credit) |
-
 | `NEXT_PUBLIC_SUPABASE_URL` | Optional | The skills hub. Your Supabase project URL. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional | The skills hub. The project's publishable (or legacy anon) key. Safe in the browser because every table uses row-level security. See [hub-setup.md](hub-setup.md). |
 
