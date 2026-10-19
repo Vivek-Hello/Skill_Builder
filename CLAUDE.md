@@ -68,7 +68,7 @@ Outside `src/`: `supabase/migrations/0001_skills_hub.sql` (whole hub schema, RLS
 ## Status (keep updated)
 
 - Done: build pipeline (reuse/adapt/generate), model fallback, Try it + Test (real or simulated), product UI, My skills, skills hub code, docs.
-- Hub **not yet tested live**: needs the user to create a Supabase project (`docs/hub-setup.md`).
-- Keys present: Gemini, GitHub. Missing: Anthropic (no card), Supabase.
-- Commits on `main` not pushed yet; pushing needs the user's GitHub sign-in in their own terminal.
+- Hub **not yet tested live**. Supabase project created and keys are in `.env.local`, but the SQL migration has **not** been run yet (tables missing as of 2026-10-19). Next: user runs `supabase/migrations/0001_skills_hub.sql` in the SQL Editor, then re-check tables and try sign-in + publish.
+- Keys present: Gemini, GitHub, Supabase. Missing: Anthropic (no card).
+- All commits pushed to GitHub (`origin/main`). Untracked `.agents/` + `skills-lock.json` (Supabase agent skills, added by the user's tooling): ask before committing.
 - Next up (`docs/roadmap.md`): Redis for playground limits, rate limits on build/test, deploy to Vercel, LICENSE / privacy / terms docs.
