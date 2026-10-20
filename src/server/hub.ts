@@ -12,14 +12,33 @@ const SKILL_FIELDS =
 
 export const PAGE_SIZE = 24;
 
+// A hub read failed. setupMissing means the tables don't exist yet (migration not run).
+export class HubError extends Error {
+  constructor(message: string, readonly setupMissing: boolean) {
+    super(message);
+  }
+}
+
+// PostgREST codes for "table / function not found in the schema cache"
+const MISSING_SCHEMA = new Set(["PGRST205", "PGRST202", "42P01"]);
+
+function check(error: { code?: string; message: string } | null) {
+  if (!error) return;
+  if (error.code && MISSING_SCHEMA.has(error.code)) {
+    throw new HubError("The hub database isn't set up yet.", true);
+  }
+  throw new HubError(error.message, false);
+}
+
 // ---------------------------------------------------------------- reads (public)
 
 export async function getProfile(username: string): Promise<Profile | null> {
-  const { data } = await publicSupabase()
+  const { data, error } = await publicSupabase()
     .from("profiles")
     .select("id, username, display_name, avatar_url, created_at")
     .eq("username", username.toLowerCase())
     .maybeSingle();
+  check(error);
   return (data as Profile | null) ?? null;
 }
 
@@ -29,29 +48,31 @@ export async function listOwnerSkills(ownerId: string): Promise<HubSkill[]> {
     .select(SKILL_FIELDS)
     .eq("owner_id", ownerId)
     .order("updated_at", { ascending: false });
-  if (error) throw error;
+  check(error);
   return data as unknown as HubSkill[];
 }
 
 export async function getSkill(username: string, slug: string): Promise<HubSkill | null> {
   const profile = await getProfile(username);
   if (!profile) return null;
-  const { data } = await publicSupabase()
+  const { data, error } = await publicSupabase()
     .from("skills")
     .select(SKILL_FIELDS)
     .eq("owner_id", profile.id)
     .eq("slug", slug)
     .maybeSingle();
+  check(error);
   return (data as unknown as HubSkill | null) ?? null;
 }
 
 export async function getVersion(skillId: string, version: number): Promise<HubVersionWithFiles | null> {
-  const { data } = await publicSupabase()
+  const { data, error } = await publicSupabase()
     .from("skill_versions")
     .select("version, message, changes, created_at, files")
     .eq("skill_id", skillId)
     .eq("version", version)
     .maybeSingle();
+  check(error);
   return (data as HubVersionWithFiles | null) ?? null;
 }
 
@@ -61,7 +82,7 @@ export async function listVersions(skillId: string): Promise<HubVersion[]> {
     .select("version, message, changes, created_at")
     .eq("skill_id", skillId)
     .order("version", { ascending: false });
-  if (error) throw error;
+  check(error);
   return data as HubVersion[];
 }
 
@@ -76,7 +97,7 @@ export async function exploreSkills({ q, sort, page }: { q?: string; sort: Explo
       : query.order("stars_count", { ascending: false }).order("updated_at", { ascending: false });
   const from = (page - 1) * PAGE_SIZE;
   const { data, count, error } = await query.range(from, from + PAGE_SIZE - 1);
-  if (error) throw error;
+  check(error);
   return { skills: data as unknown as HubSkill[], total: count ?? 0 };
 }
 

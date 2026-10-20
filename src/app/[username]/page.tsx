@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Avatar, formatDate } from "@/features/hub/avatar";
+import { loadHub } from "@/features/hub/hub-unavailable";
 import { GridSkeleton, HubDisabled, SkillGrid } from "@/features/hub/skill-card";
 import { hubEnabled } from "@/lib/supabase/config";
 import { getProfile, listOwnerSkills } from "@/server/hub";
@@ -18,9 +19,13 @@ export default function ProfilePage({ params }: PageProps<"/[username]">) {
 
 async function Profile({ params }: { params: PageProps<"/[username]">["params"] }) {
   const { username } = await params;
-  const profile = await getProfile(decodeURIComponent(username));
-  if (!profile) notFound();
-  const skills = await listOwnerSkills(profile.id);
+  const loaded = await loadHub(async () => {
+    const profile = await getProfile(decodeURIComponent(username));
+    return profile ? { profile, skills: await listOwnerSkills(profile.id) } : null;
+  });
+  if ("unavailable" in loaded) return loaded.unavailable;
+  if (!loaded.data) notFound();
+  const { profile, skills } = loaded.data;
   const stars = skills.reduce((n, s) => n + s.stars_count, 0);
 
   return (

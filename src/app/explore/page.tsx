@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { loadHub } from "@/features/hub/hub-unavailable";
 import { GridSkeleton, HubDisabled, SkillGrid } from "@/features/hub/skill-card";
 import { hubEnabled } from "@/lib/supabase/config";
 import { exploreSkills, PAGE_SIZE, type ExploreSort } from "@/server/hub";
@@ -27,7 +28,9 @@ async function Results({ searchParams }: { searchParams: PageProps<"/explore">["
   const q = typeof params.q === "string" ? params.q.slice(0, 200) : "";
   const sort: ExploreSort = params.sort === "new" ? "new" : "stars";
   const page = Math.max(1, Number(params.page) || 1);
-  const { skills, total } = await exploreSkills({ q, sort, page });
+  const loaded = await loadHub(() => exploreSkills({ q, sort, page }));
+  if ("unavailable" in loaded) return loaded.unavailable;
+  const { skills, total } = loaded.data;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const href = (next: Record<string, string | number>) => {
     const sp = new URLSearchParams({ ...(q && { q }), sort, page: String(page), ...Object.fromEntries(Object.entries(next).map(([k, v]) => [k, String(v)])) });

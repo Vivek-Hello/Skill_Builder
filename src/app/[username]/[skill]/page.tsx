@@ -5,6 +5,7 @@ import { GitFork, History, Info, Scale, Sparkles, WandSparkles } from "lucide-re
 import { Avatar, formatDate } from "@/features/hub/avatar";
 import { InstallSteps } from "@/features/hub/install-steps";
 import { SkillActions } from "@/features/hub/skill-actions";
+import { loadHub } from "@/features/hub/hub-unavailable";
 import { HubDisabled } from "@/features/hub/skill-card";
 import { Playground } from "@/features/playground/playground";
 import { FileBrowser } from "@/features/workspace/file-browser";
@@ -27,13 +28,18 @@ export default function SkillPage({ params, searchParams }: Props) {
 
 async function SkillView({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
   const [{ username, skill: slug }, query] = await Promise.all([params, searchParams]);
-  const skill = await getSkill(decodeURIComponent(username), decodeURIComponent(slug));
-  if (!skill) notFound();
-
-  const requested = Number(query.v);
-  const versionNumber = Number.isInteger(requested) && requested >= 1 && requested <= skill.latest_version ? requested : skill.latest_version;
-  const [version, versions] = await Promise.all([getVersion(skill.id, versionNumber), listVersions(skill.id)]);
-  if (!version) notFound();
+  const loaded = await loadHub(async () => {
+    const skill = await getSkill(decodeURIComponent(username), decodeURIComponent(slug));
+    if (!skill) return null;
+    const requested = Number(query.v);
+    const versionNumber =
+      Number.isInteger(requested) && requested >= 1 && requested <= skill.latest_version ? requested : skill.latest_version;
+    const [version, versions] = await Promise.all([getVersion(skill.id, versionNumber), listVersions(skill.id)]);
+    return version ? { skill, version, versions } : null;
+  });
+  if ("unavailable" in loaded) return loaded.unavailable;
+  if (!loaded.data) notFound();
+  const { skill, version, versions } = loaded.data;
   const isLatest = version.version === skill.latest_version;
   const base = `/${skill.owner.username}/${skill.slug}`;
 
